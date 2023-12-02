@@ -7,6 +7,21 @@ from SwSpotify import spotify
 #serial is to connect to arduino
 import pyautogui, time, serial
 
+#spotifyAPI to get currently playing song
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+
+# Set up your Spotify credentials
+client_id = 'be993bd5270340218be21d86d9e0361d'
+client_secret = 'beeaf5111ddf498fa7c52493e69b3799'
+redirect_uri = 'http://localhost:8080/callback'
+scope = 'user-read-currently-playing'
+
+# Authorization
+auth_manager = SpotifyOAuth(client_id, client_secret, redirect_uri, scope=scope)
+sp = spotipy.Spotify(auth_manager=auth_manager)
+
+
 #functions to control spotify
 def skip():
     pyautogui.hotkey('command', 'right', interval=0.1)
@@ -23,6 +38,25 @@ def openSpotify():
     pyautogui.write('Spotify', interval=0.1)
 
     pyautogui.press('enter')
+
+#function to get song from Spotify using API
+def getSong():
+    # Getting the current song
+    current_track = sp.current_user_playing_track()
+    if current_track is not None:
+        track_name = current_track['item']['name']
+        artist_name = current_track['item']['artists'][0]['name']
+    else:
+        recently_played = sp.current_user_recently_played(limit=1)
+        if recently_played['items']:
+            last_track = recently_played['items'][0]['track']
+            track_name = last_track['name']
+            artist_name = last_track['artists'][0]['name']
+        else:
+            track_name = ""
+            artist_name = ""
+    
+    return [track_name, artist_name]
 
 # code to check which ports are active
 # import serial.tools.list_ports
@@ -62,8 +96,12 @@ if __name__ == '__main__' :
 
     while True:
 
-        # #get currently playing song
-        # song = spotify.song()
+        #get currently selected song details
+        details = getSong()
+
+        #sort into song and artist
+        song = details[0]
+        artist = details[1]
 
 
         incoming = str(arduino.readline())
